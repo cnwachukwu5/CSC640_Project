@@ -17,7 +17,7 @@ The paper is an empirical study on the impact of software developer work habits 
 
 
 ## Data Collection
-It was a challenge to get the exact data used in the paper. We contacted the authors but they directed us to the KAVE interacted dataset of MSR challenge 2018. The Interaction dataset consists of JSON files representing recorded events on a user's IDE (Visual studio). This dataset has about 11.1 million records. KAVE project provides a Java program to retrieve the various events recorded while a developer works on the IDE. We extended this Java program to pull the three events and the related fields used in the paper. We hosted the modified project on out ptoject github page, [CSC640_Project](https://github.com/cnwachukwu5/CSC640_Project/tree/master/java-cc-kave-examples/)
+It was a challenge to get the exact data used in the paper. We contacted the authors but they directed us to the KAVE interacted dataset of MSR challenge 2018. The Interaction dataset consists of JSON files representing recorded events on a user's IDE (Visual studio). This dataset has about 11.1 million records. KAVE project provides a Java program to retrieve the various events recorded while a developer works on the IDE. We extended this Java program to pull the three events and related fields used in the paper. We hosted the modified project on our ptoject github page, [CSC640_Project](https://github.com/cnwachukwu5/CSC640_Project/tree/master/java-cc-kave-examples/)
 
 
 ## Replication
