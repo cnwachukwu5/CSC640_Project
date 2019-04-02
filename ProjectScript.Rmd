@@ -4,9 +4,39 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
 #loading the csv data as dataframe
 data_activityevent = read.csv('activityEvent_data.csv')
 ```
+# Project Title: Replication of Empirical Study on the Relationship Between Developer's Working Habits and Efficiency paper
+
+
+## Introduction
+The paper is an empirical study on the impact of software developer work habits (based on the total work time throughout the week, continuous working time and particular period of the day) on efficiency of the work done. The paper addressed three research questions. This project is an attempt to replicate the data analysis of the project.
+
+
+## Data Collection
+It was a challenge to get the exact data used in the paper. We contacted the authors but they directed us to the KAVE interacted dataset of MSR challenge 2018. The Interaction dataset consists of JSON files representing recorded events on a user's IDE (Visual studio). This dataset has about 11.1 million records. KAVE project provides a Java program to retrieve the various events recorded while a developer works on the IDE. We extended this Java program to pull the three events and the related fields used in the paper. We hosted the modified project on out ptoject github page, [CSC640_Project](https://github.com/cnwachukwu5/CSC640_Project/tree/master/java-cc-kave-examples/)
+
+
+## Replication
+
+### Research question 1: 
+Does day of the week affect development time and efficiency? This is to identify correlation between between day of the week and development efficiency.
+
+### Hypothesis
+
+Formulate an appropriate null hypothesis.
+Null Hypothesis (Ho): Day of the week does not affect development time and efficiency
+$$
+H_0: dayOfWeek  \;\;\neg\propto  developmentEfficiency
+$$
+Null Hypothesis (Ha): Day of the week does affect development time and efficiency
+$$
+H_a: dayOfWeek  \;\;\propto  developmentEfficiency
+$$
+
 
 #Using the date column to find out which day is it and then adding the day column
 ```{r}
@@ -18,7 +48,7 @@ data_activityevent$day <- lubridate::wday(data_activityevent$TriggeredAt, label=
 data_activityevent2 <- aggregate(data_activityevent$Duration.millisecs. ~ data_activityevent$day, data_activityevent, sum)
 colnames(data_activityevent2) <- c("day", "TotalDurationinMilliSeconds")
 data_activityevent2 <- data_activityevent2 %>% mutate(TotalDurationinHours = TotalDurationinMilliSeconds/(1000*60*60))
-
+data_activityevent2
 ```
 
 #Using ggplot to plot the total working duration vs the day of the week
