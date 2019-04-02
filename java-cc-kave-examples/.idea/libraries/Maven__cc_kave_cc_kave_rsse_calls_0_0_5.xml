@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: cc.kave:cc.kave.rsse.calls:0.0.5">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/cc/kave/cc.kave.rsse.calls/0.0.5/cc.kave.rsse.calls-0.0.5.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/cc/kave/cc.kave.rsse.calls/0.0.5/cc.kave.rsse.calls-0.0.5-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/cc/kave/cc.kave.rsse.calls/0.0.5/cc.kave.rsse.calls-0.0.5-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
