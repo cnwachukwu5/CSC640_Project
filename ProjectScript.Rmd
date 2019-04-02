@@ -1,0 +1,27 @@
+---
+title: "Scriptforproject"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+#loading the csv data as dataframe
+data_activityevent = read.csv('activityEvent_data.csv')
+```
+
+#Using the date column to find out which day is it and then adding the day column
+```{r}
+data_activityevent$day <- lubridate::wday(data_activityevent$TriggeredAt, label=TRUE)
+```
+
+#Forming a new dataframe by grouping the build event data by day and total duration
+```{r}
+data_activityevent2 <- aggregate(data_activityevent$Duration.millisecs. ~ data_activityevent$day, data_activityevent, sum)
+colnames(data_activityevent2) <- c("day", "TotalDurationinMilliSeconds")
+data_activityevent2 <- data_activityevent2 %>% mutate(TotalDurationinHours = TotalDurationinMilliSeconds/(1000*60*60))
+
+```
+
+#Using ggplot to plot the total working duration vs the day of the week
+```{r}
+ggplot(data_activityevent2, aes(x = day, y = TotalDurationinHours)) + geom_bar(stat = "identity")
+```
