@@ -2,12 +2,20 @@
 title: "Scriptforproject"
 output: html_document
 ---
+# Load libraries
+```{r}
+library(aCRM)
+library(tidyverse)
+```
 
+# Load the data
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(tidyverse)
+
 #loading the csv data as dataframe
 data_activityevent = read.csv('activityEvent_data.csv')
+data_testrunevent = read.csv('testRunEvent_data.csv')
+data_buildevent = read.csv('buildEvent_data.csv')
 ```
 # Project Title: Replication of Empirical Study on the Relationship Between Developer's Working Habits and Efficiency paper
 
@@ -45,13 +53,32 @@ data_activityevent$day <- lubridate::wday(data_activityevent$TriggeredAt, label=
 
 #Forming a new dataframe by grouping the build event data by day and total duration
 ```{r}
-data_activityevent2 <- aggregate(data_activityevent$Duration.millisecs. ~ data_activityevent$day, data_activityevent, sum)
+data_activityevent2 <- aggregate(data_activityevent$Duration.millisecs ~ data_activityevent$day, data_activityevent, sum)
+data_activityevent2
 colnames(data_activityevent2) <- c("day", "TotalDurationinMilliSeconds")
 data_activityevent2 <- data_activityevent2 %>% mutate(TotalDurationinHours = TotalDurationinMilliSeconds/(1000*60*60))
-data_activityevent2
+
 ```
 
 #Using ggplot to plot the total working duration vs the day of the week
 ```{r}
 ggplot(data_activityevent2, aes(x = day, y = TotalDurationinHours)) + geom_bar(stat = "identity")
 ```
+
+
+```{r}
+data_testrunevent
+```
+
+# Get day of week from the TriggeredAt column
+```{r}
+data_testrunevent$day <- lubridate::wday(data_testrunevent$TriggeredAt, label=TRUE)
+
+data_testrunevent2 <- data_testrunevent %>% select(day, Result) %>% filter(Result == "Success") %>% sample_n(2416)
+data_testrunevent2 <- data_testrunevent2 %>% filter(!is.na(data_testrunevent2$Result) & !is.na(data_testrunevent2$day))
+
+#data_testrunevent2_failure <- data_testrunevent %>% select(day, Result) %>% filter(Result == "Failed") %>% sample_n(1563)
+
+#data_testrunevent2_failure
+```
+
