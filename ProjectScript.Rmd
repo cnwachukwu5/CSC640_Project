@@ -74,11 +74,13 @@ data_testrunevent
 ```{r}
 data_testrunevent$day <- lubridate::wday(data_testrunevent$TriggeredAt, label=TRUE)
 
-data_testrunevent2 <- data_testrunevent %>% select(day, Result) %>% filter(Result == "Success") %>% sample_n(2416)
-data_testrunevent2 <- data_testrunevent2 %>% filter(!is.na(data_testrunevent2$Result) & !is.na(data_testrunevent2$day))
+data_Result_Success <- data_testrunevent %>% select(day, Result) %>% filter(Result == "Success") %>% sample_n(2416)
+data_Result_Success <- data_Result_Success %>% group_by(data_Result_Success$day) %>% count(Result)
+data_Result_Success
 
-#data_testrunevent2_failure <- data_testrunevent %>% select(day, Result) %>% filter(Result == "Failed") %>% sample_n(1563)
+data_Result_Failed <- data_testrunevent %>% select(day, Result) %>% filter(Result == "Failed") %>% sample_n(1563)
+data_Result_Failed <- data_Result_Failed %>% group_by(data_Result_Failed$day) %>% count(Result)
+data_Result_Failed
 
-#data_testrunevent2_failure
 ```
 
