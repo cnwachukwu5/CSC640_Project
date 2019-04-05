@@ -4,7 +4,6 @@ output: html_document
 ---
 # Load libraries
 ```{r}
-library(aCRM)
 library(tidyverse)
 ```
 
@@ -76,11 +75,20 @@ data_testrunevent$day <- lubridate::wday(data_testrunevent$TriggeredAt, label=TR
 
 data_Result_Success <- data_testrunevent %>% select(day, Result) %>% filter(Result == "Success") %>% sample_n(2416)
 data_Result_Success <- data_Result_Success %>% group_by(data_Result_Success$day) %>% count(Result)
-data_Result_Success
+#data_Result_Success
 
 data_Result_Failed <- data_testrunevent %>% select(day, Result) %>% filter(Result == "Failed") %>% sample_n(1563)
 data_Result_Failed <- data_Result_Failed %>% group_by(data_Result_Failed$day) %>% count(Result)
-data_Result_Failed
+#data_Result_Failed
 
 ```
+```{r}
+success_failure_plot <- ggplot() +
+  geom_line(aes(data_Result_Success$`data_Result_Success$day`, data_Result_Success$n, group=1), color="green") +
+  geom_line(aes(data_Result_Failed$`data_Result_Failed$day`, data_Result_Failed$n, group=1), color="red") +
+  scale_x_discrete(name="Day Of Week") +
+  scale_y_continuous(name="Number of Success",sec.axis = sec_axis(~./100, name="Number of Failure", labels = function(b){
+  paste0(round(b * 100, 0), "")})) + theme(legend.position = c(0.8,0.9) )
 
+success_failure_plot
+```
