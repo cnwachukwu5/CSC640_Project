@@ -71,24 +71,37 @@ data_testrunevent
 
 # Get day of week from the TriggeredAt column
 ```{r}
+set.seed(0)
 data_testrunevent$day <- lubridate::wday(data_testrunevent$TriggeredAt, label=TRUE)
 
 data_Result_Success <- data_testrunevent %>% select(day, Result) %>% filter(Result == "Success") %>% sample_n(2416)
 data_Result_Success <- data_Result_Success %>% group_by(data_Result_Success$day) %>% count(Result)
-#data_Result_Success
+colnames(data_Result_Success) <- c("day", "Result_success" ,"Frequency_Success")
+data_Result_Success
 
 data_Result_Failed <- data_testrunevent %>% select(day, Result) %>% filter(Result == "Failed") %>% sample_n(1563)
 data_Result_Failed <- data_Result_Failed %>% group_by(data_Result_Failed$day) %>% count(Result)
-#data_Result_Failed
+colnames(data_Result_Failed) <- c("day", "Result_Failure" ,"Frequency_Failure")
+data_Result_Failed
+
+data_results <- left_join(data_Result_Success, data_Result_Failed)
+data_results <- data_results %>% mutate(total = Frequency_Success + Frequency_Failure)
+data_results <- data_results %>% mutate(success_rate = round((Frequency_Success/total)*100, 1))
+data_results <- data_results %>% mutate(failure_rate = round((Frequency_Failure/total)*100, 1))
+data_results
+
+#data_Result_Success <- data_Result_Success %>% mutate()
 
 ```
+
+
 ```{r}
-success_failure_plot <- ggplot() +
-  geom_line(aes(data_Result_Success$`data_Result_Success$day`, data_Result_Success$n, group=1), color="green") +
-  geom_line(aes(data_Result_Failed$`data_Result_Failed$day`, data_Result_Failed$n, group=1), color="red") +
-  scale_x_discrete(name="Day Of Week") +
-  scale_y_continuous(name="Number of Success",sec.axis = sec_axis(~./100, name="Number of Failure", labels = function(b){
-  paste0(round(b * 100, 0), "")})) + theme(legend.position = c(0.8,0.9) )
+success_failure_plot <- ggplot(data_results) + 
+  geom_line(aes(day, success_rate, group=1), color="green") + 
+  geom_line(aes(day, failure_rate, group=1), color="red") + 
+  scale_x_discrete(name="Day Of Week") + 
+  scale_y_continuous(name="Success Rate (%)",sec.axis = sec_axis(~./100, name="Failure Rate (%)", labels = function(b){
+  paste0(round(b * 100, 0), "")}))
 
 success_failure_plot
 ```
