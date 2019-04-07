@@ -48,7 +48,41 @@ $$
 #Using the date column to find out which day is it and then adding the day column
 ```{r}
 data_activityevent$day <- lubridate::wday(data_activityevent$TriggeredAt, label=TRUE)
+data_activeTime <- data_activityevent %>% select(TriggeredAt, TriggeredAt_date_hms, day)  %>% sample_n(311245) %>% arrange(day, TriggeredAt)
+
+getActiveTime_df <- function(sampledData){
+  result_df <- data.frame(dayofweek=character, totalActivityTimeInHours=numeric())
+  dayOfWeek <- list("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+  options(digits.secs=8)
+  for (x in dayOfWeek) {
+    
+    data_for_dayEvent <- sampledData %>% select(day, TriggeredAt_date_hms,TriggeredAt) %>% filter(day == x) %>% arrange(TriggeredAt)
+    data_for_dayEvent %>% mutate_if(is.factor, as.character) -> data_for_dayEvent
+    list_time <- list(data_for_dayEvent$TriggeredAt_date_hms)
+    for(timeValue in list_time){
+      data_for_dayEvent$dateTime <- lubridate::ymd_hms(timeValue)
+    }
+    diff_result <- diff(data_for_dayEvent$dateTime)
+    totalActivityTime_perDay <- 0
+    for(i in diff_result){
+      if(i <= 5){
+        totalActivityTime_perDay <- totalActivityTime_perDay + i
+      }
+    }
+    totalActivityTime_perDay <- round(totalActivityTime_perDay / 60, 0)
+    result_df <- rbind(result_df, data.frame(dayofweek=x, totalActivityTimeInHours=totalActivityTime_perDay))
+  }#Each day loop
+
+  return(result_df)
+}
+
+getActiveTime_df(data_activeTime)
+
+
 ```
+
+
+
 
 #Forming a new dataframe by grouping the build event data by day and total duration
 ```{r}
@@ -77,21 +111,16 @@ data_testrunevent$day <- lubridate::wday(data_testrunevent$TriggeredAt, label=TR
 data_Result_Success <- data_testrunevent %>% select(day, Result) %>% filter(Result == "Success") %>% sample_n(2416)
 data_Result_Success <- data_Result_Success %>% group_by(data_Result_Success$day) %>% count(Result)
 colnames(data_Result_Success) <- c("day", "Result_success" ,"Frequency_Success")
-data_Result_Success
 
 data_Result_Failed <- data_testrunevent %>% select(day, Result) %>% filter(Result == "Failed") %>% sample_n(1563)
 data_Result_Failed <- data_Result_Failed %>% group_by(data_Result_Failed$day) %>% count(Result)
 colnames(data_Result_Failed) <- c("day", "Result_Failure" ,"Frequency_Failure")
-data_Result_Failed
 
 data_results <- left_join(data_Result_Success, data_Result_Failed)
 data_results <- data_results %>% mutate(total = Frequency_Success + Frequency_Failure)
 data_results <- data_results %>% mutate(success_rate = round((Frequency_Success/total)*100, 1))
 data_results <- data_results %>% mutate(failure_rate = round((Frequency_Failure/total)*100, 1))
 data_results
-
-#data_Result_Success <- data_Result_Success %>% mutate()
-
 ```
 
 
