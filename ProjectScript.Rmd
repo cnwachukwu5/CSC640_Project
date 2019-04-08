@@ -178,14 +178,75 @@ data_results <- data_results %>% mutate(failure_rate = round((Frequency_Failure/
 data_results
 ```
 
-
+#Plotting success rate and failure rate against day of the week
 ```{r}
 success_failure_plot <- ggplot(data_results) + 
-  geom_line(aes(day, success_rate, group=1), color="green") + 
-  geom_line(aes(day, failure_rate, group=1), color="red") + 
+  geom_line(aes(day, success_rate, group=1), color="darkgreen") + 
+  geom_line(aes(day, failure_rate, group=1), color="darkred") + 
   scale_x_discrete(name="Day Of Week") + 
   scale_y_continuous(name="Success Rate (%)",sec.axis = sec_axis(~./100, name="Failure Rate (%)", labels = function(b){
   paste0(round(b * 100, 0), "")}))
 
 success_failure_plot
+```
+
+
+
+```{r}
+data_testrunevent
+```
+
+# Get day of week from the TriggeredAt column
+```{r}
+set.seed(0)
+data_buildevent$timeInHours <- hour(ymd_hms(data_buildevent$TriggeredAt))
+
+
+data_buildevent$timeInterval <- ifelse(data_buildevent$timeInHours >= 0 & data_buildevent$timeInHours <3, '0-2',
+                                    ifelse(data_testrunevent$timeInHours >= 3 & data_buildevent$timeInHours <6, '3-5',
+                                    ifelse(data_buildevent$timeInHours >= 6 & data_buildevent$timeInHours <9, '6-8',
+                                    ifelse(data_buildevent$timeInHours >= 9 & data_buildevent$timeInHours <12, '9-11',
+                                    ifelse(data_buildevent$timeInHours >= 12 & data_buildevent$timeInHours <15, '12-14',
+                                    ifelse(data_buildevent$timeInHours >= 15 & data_buildevent$timeInHours <18, '15-17',
+                                    ifelse(data_buildevent$timeInHours >= 18 & data_buildevent$timeInHours <21, '18-20',
+                                   ifelse(data_buildevent$timeInHours >= 21 & data_buildevent$timeInHours <=24,  '21-23','NA'))))))))
+
+View(data_buildevent)
+
+data_Result_Success_timeRange <- data_buildevent %>% select(timeInterval, Successful) %>% filter(Successful == "TRUE") %>% sample_n(13195)
+data_Result_Success_timeRange <- data_Result_Success_timeRange %>% group_by(data_Result_Success_timeRange$timeInterval) %>% count(Successful)
+colnames(data_Result_Success_timeRange) <- c("timeInterval", "Result_success" ,"Frequency_Success")
+View(data_Result_Success_timeRange)
+
+#data_Result_Success_timeRange <- aggregate(data_testrunevent$Result == "Success" ~ #data_testrunevent$timeInterval, data_testrunevent, sum)
+#colnames(data_Result_Success_timeRange) <- c("TimeInterval", "Frequency_Success")
+
+#data_Result_Success_timeRange <- data_Result_Success_timeRange %>% arrange(match(TimeInterval, c("0-2", "3-5", "6-8", "9-11", "12-14", "15-17", "18-20", "21-23")), desc(Frequency_Success))
+
+
+data_Result_Failed_timeRange <- data_buildevent %>% select(timeInterval, Successful) %>% filter(Successful == "FALSE") %>% sample_n(1786)
+data_Result_Failed_timeRange <- data_Result_Failed_timeRange %>% group_by(data_Result_Failed_timeRange$timeInterval) %>% count(Successful)
+colnames(data_Result_Failed_timeRange) <- c("timeInterval", "Result_Failure" ,"Frequency_Failure")
+View(data_Result_Failed_timeRange)
+
+data_results_timeRange <- left_join(data_Result_Success_timeRange, data_Result_Failed_timeRange)
+data_results_timeRange <- data_results_timeRange %>% mutate(total = Frequency_Success + Frequency_Failure)
+data_results_timeRange <- data_results_timeRange %>% mutate(success_rate = round((Frequency_Success/total)*100, 1))
+data_results_timeRange <- data_results_timeRange %>% mutate(failure_rate = round((Frequency_Failure/total)*100, 1))
+data_results_timeRange
+View(data_results_timeRange)
+```
+
+
+#Plotting success rate and failure rate against day of the week
+```{r}
+timeIntervalOrdered  = factor(data_results_timeRange$timeInterval, levels=c("0-2", "3-5", "6-8", "9-11", "12-14", "15-17", "18-20", "21-23"))
+success_failure_plot_timeRange <- ggplot(data_results_timeRange) + 
+  geom_line(aes(timeIntervalOrdered, success_rate, group=1), color="darkgreen") + 
+  geom_line(aes(timeIntervalOrdered, failure_rate, group=1), color="darkred") + 
+  scale_x_discrete(name="timeInterval") + 
+  scale_y_continuous(name="Success Rate (%)",sec.axis = sec_axis(~./100, name="Failure Rate (%)", labels = function(b){
+  paste0(round(b * 100, 0), "")}))
+
+success_failure_plot_timeRange
 ```
