@@ -25,29 +25,47 @@ The paper is an empirical study on the impact of software developer work habits 
 
 
 ## Data Collection
-It was a challenge to get the exact data used in the paper. We contacted the authors but they directed us to the KAVE interaction dataset of MSR challenge 2018. The Interaction dataset consists of JSON files representing recorded events on a user's IDE (Visual studio). This dataset has about 11.1 million records. KAVE project provides a Java program to retrieve the various events recorded while a developer works on the IDE. We extended this Java program to pull the three events and related fields used in the paper. We hosted the modified project on our ptoject github page, [CSC640_Project](https://github.com/cnwachukwu5/CSC640_Project/tree/master/java-cc-kave-examples/)
+It was a challenge to get the exact data used in the paper. We contacted the authors but they directed us to the KAVE interaction dataset of MSR challenge 2018. The Interaction dataset consists of JSON files representing recorded events on a user's IDE (Visual studio).KAVE has FeedBag++ plugin on IDEs for capturing events related to developers activities on the IDE. This dataset has about 11.1 million records. KAVE project provides a Java program to retrieve the various events recorded while a developer works on the IDE. We extended this Java program to pull the three events and related fields used in the paper. We hosted the modified project and the extracted data in csv files on our project github page, [CSC640_Project](https://github.com/cnwachukwu5/CSC640_Project/tree/master/java-cc-kave-examples/)
 
 
 ## Replication
 
 ### Research question 1: 
-Does day of the week affect development time and efficiency? This is to identify correlation between between day of the week and development efficiency.
+Does day of the week affect development time and efficiency? This is to identify correlation between day of the week and development efficiency.
 
-### Hypothesis
+#### Hypothesis
 
 Formulate an appropriate null hypothesis.
 Null Hypothesis (Ho): Day of the week does not affect development time and efficiency
-$$
-H_0: dayOfWeek  \;\;\neg\propto  developmentEfficiency
-$$
-Null Hypothesis (Ha): Day of the week does affect development time and efficiency
-$$
-H_a: dayOfWeek  \;\;\propto  developmentEfficiency
-$$
 
+Alternate Hypothesis (Ha): Day of the week does affect development time and efficiency
 
-#Using the date column to find out which day is it and then adding the day column
+Our analysis of the sampled data showed that:
+
+### Research question 2:
+Is there a relationship between development efficient and working time within a 24-hour period? 
+
+#### Hypothesis
+Formulate an appropriate null hypothesis.
+Null Hypothesis (Ho): There is no relationship between development efficiency and working time within a 24-hour period
+
+Alternate Hypothesis (Ha): There is relationship between development efficiency and working time within a 24-hour period
+
+Our analysis of the sampled data showed that:
+
+### Research question 3:
+Does continuous working time have an effect on development efficiency?
+
+#### Hypothesis
+Formulate an appropriate null hypothesis.
+Null Hypothesis (Ho): Continous working time does not affect development efficiency
+
+Alternate Hypothesis (Ha): Continous working time does affect development efficiency
+
+Our analysis of the sampled data showed that:
+
 ```{r}
+# Get week day from TriggeredAT field and compute: activitytime, totalworkingtime and continuous working time
 data_activityevent$day <- lubridate::wday(data_activityevent$TriggeredAt, label=TRUE)
 data_activeTime <- data_activityevent %>% select(TriggeredAt, TriggeredAt_date_hms, day)  %>% sample_n(311245) %>% arrange(day, TriggeredAt)
 
