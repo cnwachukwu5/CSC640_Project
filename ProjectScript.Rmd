@@ -25,7 +25,7 @@ The paper is an empirical study on the impact of software developer work habits 
 
 
 ## Data Collection
-It was a challenge to get the exact data used in the paper. We contacted the authors but they directed us to the KAVE interacted dataset of MSR challenge 2018. The Interaction dataset consists of JSON files representing recorded events on a user's IDE (Visual studio). This dataset has about 11.1 million records. KAVE project provides a Java program to retrieve the various events recorded while a developer works on the IDE. We extended this Java program to pull the three events and related fields used in the paper. We hosted the modified project on our ptoject github page, [CSC640_Project](https://github.com/cnwachukwu5/CSC640_Project/tree/master/java-cc-kave-examples/)
+It was a challenge to get the exact data used in the paper. We contacted the authors but they directed us to the KAVE interaction dataset of MSR challenge 2018. The Interaction dataset consists of JSON files representing recorded events on a user's IDE (Visual studio). This dataset has about 11.1 million records. KAVE project provides a Java program to retrieve the various events recorded while a developer works on the IDE. We extended this Java program to pull the three events and related fields used in the paper. We hosted the modified project on our ptoject github page, [CSC640_Project](https://github.com/cnwachukwu5/CSC640_Project/tree/master/java-cc-kave-examples/)
 
 
 ## Replication
@@ -52,33 +52,37 @@ data_activityevent$day <- lubridate::wday(data_activityevent$TriggeredAt, label=
 data_activeTime <- data_activityevent %>% select(TriggeredAt, TriggeredAt_date_hms, day)  %>% sample_n(311245) %>% arrange(day, TriggeredAt)
 
 getActiveTime_df <- function(sampledData){
-  result_df <- data.frame(dayofweek=character, totalActivityTimeInHours=numeric())
+  result_df <- data.frame(dayofweek=character, continuousWorkingTimeInHours=numeric(),  totalActivityTimeInHours=numeric())
   dayOfWeek <- list("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
   options(digits.secs=8)
-  for (x in dayOfWeek) {
-    
+  for (x in dayOfWeek){
     data_for_dayEvent <- sampledData %>% select(day, TriggeredAt_date_hms,TriggeredAt) %>% filter(day == x) %>% arrange(TriggeredAt)
     data_for_dayEvent %>% mutate_if(is.factor, as.character) -> data_for_dayEvent
     list_time <- list(data_for_dayEvent$TriggeredAt_date_hms)
     for(timeValue in list_time){
       data_for_dayEvent$dateTime <- lubridate::ymd_hms(timeValue)
     }
-    diff_result <- diff(data_for_dayEvent$dateTime)
-    totalActivityTime_perDay <- 0
-    for(i in diff_result){
-      if(i <= 5){
-        totalActivityTime_perDay <- totalActivityTime_perDay + i
+    diff_result1  <- diff(data_for_dayEvent$dateTime)
+    totalActivityTime_perDay <-0 
+    continuousActivityTime_perDay <- 0
+    for(i in diff_result1) {
+      if(i <= 5) {
+        totalActivityTime_perDay <-  totalActivityTime_perDay + i
       }
     }
+    for(j in diff_result1) {
+      if(j < 5) {
+        continuousActivityTime_perDay <-  continuousActivityTime_perDay + j
+      }
+    }
+    continuousActivityTime_perDay <- round(continuousActivityTime_perDay / 60, 0)
     totalActivityTime_perDay <- round(totalActivityTime_perDay / 60, 0)
-    result_df <- rbind(result_df, data.frame(day=x, totalActivityTimeInHours=totalActivityTime_perDay))
+    result_df <- rbind(result_df, data.frame(day=x, continuousWorkingTimeInHours = continuousActivityTime_perDay, TotalActivityTimeInHours = totalActivityTime_perDay))
   }#Each day loop
 
   return(result_df)
 }
-
-
 data_activityevent2 <- getActiveTime_df(data_activeTime)
  
 ```
@@ -86,6 +90,14 @@ data_activityevent2 <- getActiveTime_df(data_activeTime)
 #Using ggplot to plot the total working duration vs the day of the week
 ```{r}
 ggplot(data_activityevent2, aes(x = day, y = totalActivityTimeInHours)) + geom_bar(stat = "identity")
+
+View(data_activityevent2)
+```
+
+
+#Using ggplot to plot the total working duration vs the day of the week
+```{r}
+ggplot(data_activityevent2, aes(x = day, y = continuousWorkingTimeInHours, TotalActivityTimeInHours)) + geom_bar(stat = "identity")
 ```
 #Adding a column to get time intervals to the data_activity event
 ```{r}
@@ -202,6 +214,8 @@ data_buildevent$timeInterval <- ifelse(data_buildevent$timeInHours >= 0 & data_b
 data_Result_Success_timeRange <- data_buildevent %>% select(timeInterval, Successful) %>% filter(Successful == "TRUE") %>% sample_n(13195)
 data_Result_Success_timeRange <- data_Result_Success_timeRange %>% group_by(data_Result_Success_timeRange$timeInterval) %>% count(Successful)
 colnames(data_Result_Success_timeRange) <- c("timeInterval", "Result_success" ,"Frequency_Success")
+
+View(data_Result_Success_timeRange)
 
 data_Result_Failed_timeRange <- data_buildevent %>% select(timeInterval, Successful) %>% filter(Successful == "FALSE") %>% sample_n(1786)
 data_Result_Failed_timeRange <- data_Result_Failed_timeRange %>% group_by(data_Result_Failed_timeRange$timeInterval) %>% count(Successful)
