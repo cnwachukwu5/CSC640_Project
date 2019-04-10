@@ -76,12 +76,14 @@ getActiveTime_df <- function(sampledData){
   return(result_df)
 }
 
-getActiveTime_df(data_activeTime)
+totalActivityTime <- getActiveTime_df(data_activeTime)
 
 
 ```
 
-
+```{r}
+ggplot(totalActivityTime, aes(x = dayofweek, y = totalActivityTimeInHours)) + geom_bar(stat = "identity")
+```
 
 
 #Forming a new dataframe by grouping the build event data by day and total duration
