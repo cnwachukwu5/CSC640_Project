@@ -5,6 +5,8 @@ output: html_document
 # Load libraries
 ```{r}
 library(tidyverse)
+install.packages('lubridate')
+library(lubridate)
 ```
 
 # Load the data
@@ -53,6 +55,7 @@ data_activeTime <- data_activityevent %>% select(TriggeredAt, TriggeredAt_date_h
 getActiveTime_df <- function(sampledData){
   result_df <- data.frame(dayofweek=character, totalActivityTimeInHours=numeric())
   dayOfWeek <- list("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
   options(digits.secs=8)
   for (x in dayOfWeek) {
     
@@ -70,15 +73,15 @@ getActiveTime_df <- function(sampledData){
       }
     }
     totalActivityTime_perDay <- round(totalActivityTime_perDay / 60, 0)
-    result_df <- rbind(result_df, data.frame(dayofweek=x, totalActivityTimeInHours=totalActivityTime_perDay))
+    result_df <- rbind(result_df, data.frame(day=x, totalActivityTimeInHours=totalActivityTime_perDay))
   }#Each day loop
 
   return(result_df)
 }
 
-totalActivityTime <- getActiveTime_df(data_activeTime)
 
-
+data_activityevent2 <- getActiveTime_df(data_activeTime)
+ 
 ```
 
 ```{r}
@@ -88,16 +91,68 @@ ggplot(totalActivityTime, aes(x = dayofweek, y = totalActivityTimeInHours)) + ge
 
 #Forming a new dataframe by grouping the build event data by day and total duration
 ```{r}
-data_activityevent2 <- aggregate(data_activityevent$Duration.millisecs ~ data_activityevent$day, data_activityevent, sum)
-data_activityevent2
-colnames(data_activityevent2) <- c("day", "TotalDurationinMilliSeconds")
-data_activityevent2 <- data_activityevent2 %>% mutate(TotalDurationinHours = TotalDurationinMilliSeconds/(1000*60*60))
+View(data_activeTime)
+#data_activityevent2 <- aggregate(data_activityevent$Duration.millisecs ~ data_activityevent$day, data_activityevent, sum)
+##data_activityevent2
+#colnames(data_activityevent2) <- c("day", "TotalDurationinMilliSeconds")
+#data_activityevent2 <- data_activityevent2 %>% mutate(TotalDurationinHours = #TotalDurationinMilliSeconds/(1000*60*60))
 
 ```
 
 #Using ggplot to plot the total working duration vs the day of the week
 ```{r}
-ggplot(data_activityevent2, aes(x = day, y = TotalDurationinHours)) + geom_bar(stat = "identity")
+ggplot(data_activityevent2, aes(x = dayofweek, y = totalActivityTimeInHours)) + geom_bar(stat = "identity")
+```
+#Adding a column to get time intervals to the data_activity event
+```{r}
+data_activityevent$timeInHours <- hour(ymd_hms(data_activityevent$TriggeredAt))
+
+data_activityevent$timeInterval <- ifelse(data_activityevent$timeInHours >= 0 & data_activityevent$timeInHours <3, '0-2',
+                                    ifelse(data_activityevent$timeInHours >= 3 & data_activityevent$timeInHours<6, '3-5',
+                                    ifelse(data_activityevent$timeInHours >= 6 & data_activityevent$timeInHours<9, '6-8',
+                                    ifelse(data_activityevent$timeInHours >= 9 & data_activityevent$timeInHours<12, '9-11',
+                                    ifelse(data_activityevent$timeInHours >= 12 & data_activityevent$timeInHours <15, '12-14',
+                                    ifelse(data_activityevent$timeInHours >= 15 & data_activityevent$timeInHours <18, '15-17',
+                                    ifelse(data_activityevent$timeInHours >= 18 & data_activityevent$timeInHours <21, '18-20',
+                                   ifelse(data_activityevent$timeInHours >= 21 & data_activityevent$timeInHours  <24,  '21-23','NA'))))))))
+
+data_activeTime_TimeRange <- data_activityevent %>% select(TriggeredAt, TriggeredAt_date_hms, timeInterval)  %>% sample_n(311245) %>% arrange(timeInterval, TriggeredAt)
+
+getActiveTime_df <- function(sampledData){
+    result_df <- data.frame(timeInterval=character, totalActivityTimeInHours=numeric())
+    TimeIntervalsInDay <- list("0-2", "3-5", "6-8", "9-11", "12-14", "15-17", "18-20",  "21-23") 
+
+    options(digits.secs=8)
+    for (x in TimeIntervalsInDay) {
+      data_for_TimeRangeEvent <- sampledData %>% select(timeInterval, TriggeredAt_date_hms,TriggeredAt) %>% filter(timeInterval == x) %>% arrange(TriggeredAt)
+      data_for_TimeRangeEvent %>% mutate_if(is.factor, as.character) -> data_for_TimeRangeEvent
+      list_time <- list(data_for_TimeRangeEvent$TriggeredAt_date_hms)
+      for(timeValue in list_time){
+        data_for_TimeRangeEvent$dateTime <- lubridate::ymd_hms(timeValue)
+      }
+      diff_result <- diff(data_for_TimeRangeEvent$dateTime)
+      totalActivityTime_perInterval <- 0
+      for(i in diff_result){
+        if(i <= 5){
+          totalActivityTime_perInterval <- totalActivityTime_perInterval + i
+        }
+      }
+    totalActivityTime_perInterval <- round(totalActivityTime_perInterval / 60, 0)
+    result_df <- rbind(result_df, data.frame(timeInterval=x, totalActivityTimeInHours=totalActivityTime_perInterval))
+  }#Each day loop
+
+  return(result_df)
+}
+View(data_activeTime_TimeRange)
+data_activityevent3 <- getActiveTime_df(data_activeTime_TimeRange)
+View(data_activityevent3)
+```
+
+
+
+#Plotting the total and continuous working time by time range
+```{r}
+ggplot(data_activityevent3, aes(x = timeInterval, y = totalActivityTimeInHours)) + geom_bar(stat = "identity")
 ```
 
 
@@ -125,14 +180,75 @@ data_results <- data_results %>% mutate(failure_rate = round((Frequency_Failure/
 data_results
 ```
 
-
+#Plotting success rate and failure rate against day of the week
 ```{r}
 success_failure_plot <- ggplot(data_results) + 
-  geom_line(aes(day, success_rate, group=1), color="green") + 
-  geom_line(aes(day, failure_rate, group=1), color="red") + 
+  geom_line(aes(day, success_rate, group=1), color="darkgreen") + 
+  geom_line(aes(day, failure_rate, group=1), color="darkred") + 
   scale_x_discrete(name="Day Of Week") + 
   scale_y_continuous(name="Success Rate (%)",sec.axis = sec_axis(~./100, name="Failure Rate (%)", labels = function(b){
   paste0(round(b * 100, 0), "")}))
 
 success_failure_plot
+```
+
+
+
+```{r}
+data_testrunevent
+```
+
+# Get day of week from the TriggeredAt column
+```{r}
+set.seed(0)
+data_buildevent$timeInHours <- hour(ymd_hms(data_buildevent$TriggeredAt))
+
+
+data_buildevent$timeInterval <- ifelse(data_buildevent$timeInHours >= 0 & data_buildevent$timeInHours <3, '0-2',
+                                    ifelse(data_testrunevent$timeInHours >= 3 & data_buildevent$timeInHours <6, '3-5',
+                                    ifelse(data_buildevent$timeInHours >= 6 & data_buildevent$timeInHours <9, '6-8',
+                                    ifelse(data_buildevent$timeInHours >= 9 & data_buildevent$timeInHours <12, '9-11',
+                                    ifelse(data_buildevent$timeInHours >= 12 & data_buildevent$timeInHours <15, '12-14',
+                                    ifelse(data_buildevent$timeInHours >= 15 & data_buildevent$timeInHours <18, '15-17',
+                                    ifelse(data_buildevent$timeInHours >= 18 & data_buildevent$timeInHours <21, '18-20',
+                                   ifelse(data_buildevent$timeInHours >= 21 & data_buildevent$timeInHours <=24,  '21-23','NA'))))))))
+
+View(data_buildevent)
+
+data_Result_Success_timeRange <- data_buildevent %>% select(timeInterval, Successful) %>% filter(Successful == "TRUE") %>% sample_n(13195)
+data_Result_Success_timeRange <- data_Result_Success_timeRange %>% group_by(data_Result_Success_timeRange$timeInterval) %>% count(Successful)
+colnames(data_Result_Success_timeRange) <- c("timeInterval", "Result_success" ,"Frequency_Success")
+View(data_Result_Success_timeRange)
+
+#data_Result_Success_timeRange <- aggregate(data_testrunevent$Result == "Success" ~ #data_testrunevent$timeInterval, data_testrunevent, sum)
+#colnames(data_Result_Success_timeRange) <- c("TimeInterval", "Frequency_Success")
+
+#data_Result_Success_timeRange <- data_Result_Success_timeRange %>% arrange(match(TimeInterval, c("0-2", "3-5", "6-8", "9-11", "12-14", "15-17", "18-20", "21-23")), desc(Frequency_Success))
+
+
+data_Result_Failed_timeRange <- data_buildevent %>% select(timeInterval, Successful) %>% filter(Successful == "FALSE") %>% sample_n(1786)
+data_Result_Failed_timeRange <- data_Result_Failed_timeRange %>% group_by(data_Result_Failed_timeRange$timeInterval) %>% count(Successful)
+colnames(data_Result_Failed_timeRange) <- c("timeInterval", "Result_Failure" ,"Frequency_Failure")
+View(data_Result_Failed_timeRange)
+
+data_results_timeRange <- left_join(data_Result_Success_timeRange, data_Result_Failed_timeRange)
+data_results_timeRange <- data_results_timeRange %>% mutate(total = Frequency_Success + Frequency_Failure)
+data_results_timeRange <- data_results_timeRange %>% mutate(success_rate = round((Frequency_Success/total)*100, 1))
+data_results_timeRange <- data_results_timeRange %>% mutate(failure_rate = round((Frequency_Failure/total)*100, 1))
+data_results_timeRange
+View(data_results_timeRange)
+```
+
+
+#Plotting success rate and failure rate against day of the week
+```{r}
+timeIntervalOrdered  = factor(data_results_timeRange$timeInterval, levels=c("0-2", "3-5", "6-8", "9-11", "12-14", "15-17", "18-20", "21-23"))
+success_failure_plot_timeRange <- ggplot(data_results_timeRange) + 
+  geom_line(aes(timeIntervalOrdered, success_rate, group=1), color="darkgreen") + 
+  geom_line(aes(timeIntervalOrdered, failure_rate, group=1), color="darkred") + 
+  scale_x_discrete(name="timeInterval") + 
+  scale_y_continuous(name="Success Rate (%)",sec.axis = sec_axis(~./100, name="Failure Rate (%)", labels = function(b){
+  paste0(round(b * 100, 0), "")}))
+
+success_failure_plot_timeRange
 ```
