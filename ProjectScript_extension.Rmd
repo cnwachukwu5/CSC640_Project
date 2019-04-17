@@ -1,0 +1,49 @@
+---
+title: "Project-Paper extension"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+```
+
+# Introduction
+The paper ("Empirical Study on the Relationship Between Developer's Working Habits and Efficiency paper") is an empirical study on the impact of software developer work habits (based on the total work time throughout the week, continuous working time and particular period of the day) on efficiency of the work done. The paper addressed three research questions:
+
+  * Does day of the week affect development time? This is to identify correlation between day of the week and development time.
+  * Is there a relationship between  total and continuous development time and time of the day?
+  * Does day of the week have an effect on development efficiency?
+
+To address these research questions, the authors used three events from the Interaction dataset of the MSR 2018 mining challenge: ActivityEvent (which records developer actions on the IDE), BuildEvent (provides information when developers build their program) and TestRunEvent (provides information when developers test their prgram).
+
+This project is an extension of the paper. In this project, we want to use the same categories of time of the day, days of the week and number of successful builds but analyze them differently using Linear regression models to see how software developer productivity is affected. Therefore, using Linear Regression in exploratory data analysis (EDA), we want to identify the relationship between days of the week, time of the day within 24-hour period and developer efficiency and productivity. Secondly, we we want to include more categories of the KAVE dataset like the "Active Window" and "Active Document" to see if the developer is actually spending time coding and try to find out the reason behind the software productivity.
+
+## Data Collection
+The paper used the MSR 2018 Mining Challenge dataset which can be assessed through the KAVE project's CARET platform. The authors used interactive dataset from the KaVE project FeedBaG++ plug-in in Visual Studio IDE. The plug-in records data about development activities on the IDE. The dataset consists of 11,123,103 records representing data shared by 81 different developers. The data represents a total of 15,000 hours of work by the developers. Each record is a json file that specifies the event-type and other contextual information relative to the developers activity on the IDE. 
+
+It was a challenge to get the exact/original data used in the paper. We contacted the authors but they directed us to the KAVE interactive dataset of MSR challenge 2018. The Interaction dataset consists of JSON files representing recorded events on a user's IDE (Visual studio). This dataset has about 11.1 million records. KAVE project provides a Java program to retrieve the various events recorded while a developer works on the IDE. We extended this Java program to pull the three events and related fields used in the paper. We hosted the modified project on our ptoject github page, [CSC640_Project](https://github.com/cnwachukwu5/CSC640_Project/tree/master/java-cc-kave-examples/)
+
+# Loading and formating the data
+```{r loadfile, echo=FALSE}
+#loading the csv data as dataframe
+data_activityevent <- read.csv('activityEvent_data.csv')
+data_testrunevent <- read.csv('testRunEvent_data.csv')
+data_buildevent <- read.csv('buildEvent_data.csv')
+```
+
+```{r}
+# Get day of the week from the TriggeredAt field in the three event types - ActivityEvent, BuildEvent and TestRunEvent
+data_activityevent$day <- lubridate::wday(data_activityevent$TriggeredAt, label=TRUE)
+data_testrunevent$day <- lubridate::wday(data_testrunevent$TriggeredAt, label=TRUE)
+data_buildevent$day <- lubridate::wday(data_buildevent$TriggeredAt, label=TRUE)
+```
+
+
+
+
+
+```{r}
+
+```

@@ -8,6 +8,7 @@ library(tidyverse)
 library(lubridate)
 ```
 
+
 # Load the data
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -17,6 +18,7 @@ data_activityevent = read.csv('activityEvent_data.csv')
 data_testrunevent = read.csv('testRunEvent_data.csv')
 data_buildevent = read.csv('buildEvent_data.csv')
 ```
+
 # Project Title: Replication of Empirical Study on the Relationship Between Developer's Working Habits and Efficiency paper
 
 
@@ -25,47 +27,26 @@ The paper is an empirical study on the impact of software developer work habits 
 
 
 ## Data Collection
-It was a challenge to get the exact data used in the paper. We contacted the authors but they directed us to the KAVE interaction dataset of MSR challenge 2018. The Interaction dataset consists of JSON files representing recorded events on a user's IDE (Visual studio).KAVE has FeedBag++ plugin on IDEs for capturing events related to developers activities on the IDE. This dataset has about 11.1 million records. KAVE project provides a Java program to retrieve the various events recorded while a developer works on the IDE. We extended this Java program to pull the three events and related fields used in the paper. We hosted the modified project and the extracted data in csv files on our project github page, [CSC640_Project](https://github.com/cnwachukwu5/CSC640_Project/tree/master/java-cc-kave-examples/)
+It was a challenge to get the exact data used in the paper. We contacted the authors but they directed us to the KAVE interacted dataset of MSR challenge 2018. The Interaction dataset consists of JSON files representing recorded events on a user's IDE (Visual studio). This dataset has about 11.1 million records. KAVE project provides a Java program to retrieve the various events recorded while a developer works on the IDE. We extended this Java program to pull the three events and related fields used in the paper. We hosted the modified project on our ptoject github page, [CSC640_Project](https://github.com/cnwachukwu5/CSC640_Project/tree/master/java-cc-kave-examples/)
 
 
 ## Replication
 
 ### Research question 1: 
-Does day of the week affect development time and efficiency? This is to identify correlation between day of the week and development efficiency.
+Does day of the week affect development time? This is to identify correlation between day of the week and development time.
 
 #### Hypothesis
 
-Formulate an appropriate null hypothesis.
-Null Hypothesis (Ho): Day of the week does not affect development time and efficiency
+#Formulate an appropriate null hypothesis.
+#Null Hypothesis (Ho): Day of the week does not affect development time 
+#Alternate Hypothesis (Ha): Day of the week does affect development time 
 
-Alternate Hypothesis (Ha): Day of the week does affect development time and efficiency
 
-Our analysis of the sampled data showed that:
+#Data Analysis
 
-### Research question 2:
-Is there a relationship between development efficient and working time within a 24-hour period? 
-
-#### Hypothesis
-Formulate an appropriate null hypothesis.
-Null Hypothesis (Ho): There is no relationship between development efficiency and working time within a 24-hour period
-
-Alternate Hypothesis (Ha): There is relationship between development efficiency and working time within a 24-hour period
-
-Our analysis of the sampled data showed that:
-
-### Research question 3:
-Does continuous working time have an effect on development efficiency?
-
-#### Hypothesis
-Formulate an appropriate null hypothesis.
-Null Hypothesis (Ho): Continous working time does not affect development efficiency
-
-Alternate Hypothesis (Ha): Continous working time does affect development efficiency
-
-Our analysis of the sampled data showed that:
+#Using the date column to find out which day is it and then adding the day column
 
 ```{r}
-# Get week day from TriggeredAT field and compute: activitytime, totalworkingtime and continuous working time
 data_activityevent$day <- lubridate::wday(data_activityevent$TriggeredAt, label=TRUE)
 data_activeTime <- data_activityevent %>% select(TriggeredAt, TriggeredAt_date_hms, day)  %>% sample_n(311245) %>% arrange(day, TriggeredAt)
 
@@ -102,25 +83,49 @@ getActiveTime_df <- function(sampledData){
   return(result_df)
 }
 data_activityevent2 <- getActiveTime_df(data_activeTime)
- 
-```
+data_activityevent2$continuousrate <- (data_activityevent2$continuousWorkingTimeInHours/data_activityevent2$TotalActivityTimeInHours) *100
+data_activityevent2$continuousrate <- round((data_activityevent2$continuousrate),1)
 
-#Using ggplot to plot the total working duration vs the day of the week
-```{r}
-ggplot(data_activityevent2, aes(x = day, y = totalActivityTimeInHours)) + geom_bar(stat = "identity")
-
-View(data_activityevent2)
 ```
 
 
 #Using ggplot to plot the total working duration vs the day of the week
 ```{r}
-ggplot(data_activityevent2, aes(x = day, y = continuousWorkingTimeInHours, TotalActivityTimeInHours)) + geom_bar(stat = "identity")
+library(reshape)
+
+dfm <- melt(data_activityevent2[,c('day','TotalActivityTimeInHours', 'continuousWorkingTimeInHours')],id.vars = 1)
+
+ggplot(dfm,aes(x = day,y = value)) + 
+    geom_bar(aes(fill = variable),stat = "identity",position = "dodge") 
 ```
+
+#Plotting line graph for continuous work rate against the day of the week
+```{r}
+ggplot(data_activityevent2, aes(x=day, y=continuousrate)) + 
+  geom_line(aes(x=day, y=continuousrate, group=1), color="black") +  scale_y_continuous(name="Continuous Rate (%)" , limits = c(45,65)) 
+```
+
+#Conclusion (Research Question 1): The graphs replicate the analysis shown in the paper to the great extent. The total and continuous time are both high in the beginning of the week and decrements towards the weekends.
+#The continuous work rate shows similar trend and is lowest on Sunday. We accept the alternate hypothesis for this research question.
+
+
+
+
+### Research question 2:
+Is there a relationship between  total and continuous development time and time of the day? 
+
+#### Hypothesis
+Formulate an appropriate null hypothesis.
+Null Hypothesis (Ho): There is no relationship between total/continuous activity time and working time within a 24-hour period
+
+Alternate Hypothesis (Ha): There is relationship between total/continuous activity time  and working time within a 24-hour period
+
+#Data Analysis
+
+
 #Adding a column to get time intervals to the data_activity event
 ```{r}
 data_activityevent$timeInHours <- hour(ymd_hms(data_activityevent$TriggeredAt))
-
 
 data_activityevent$timeInterval <- ifelse(data_activityevent$timeInHours >= 0 & data_activityevent$timeInHours <3, '0-2',
                                     ifelse(data_activityevent$timeInHours >= 3 & data_activityevent$timeInHours<6, '3-5',
@@ -134,7 +139,7 @@ data_activityevent$timeInterval <- ifelse(data_activityevent$timeInHours >= 0 & 
 data_activeTime_TimeRange <- data_activityevent %>% select(TriggeredAt, TriggeredAt_date_hms, timeInterval)  %>% sample_n(311245) %>% arrange(timeInterval, TriggeredAt)
 
 getActiveTime_df <- function(sampledData){
-    result_df <- data.frame(timeInterval=character, totalActivityTimeInHours=numeric())
+    result_df <- data.frame(timeInterval=character, totalActivityTimeInHours=numeric(), continuousActivityTimeInHours = numeric())
     TimeIntervalsInDay <- list("0-2", "3-5", "6-8", "9-11", "12-14", "15-17", "18-20",  "21-23") 
 
     options(digits.secs=8)
@@ -146,34 +151,64 @@ getActiveTime_df <- function(sampledData){
         data_for_TimeRangeEvent$dateTime <- lubridate::ymd_hms(timeValue)
       }
       diff_result <- diff(data_for_TimeRangeEvent$dateTime)
-      totalActivityTime_perInterval <- 0
+      totalActivityTime_perInterval <- 0 
+      continuousActivityTime_perInterval <- 0
       for(i in diff_result){
         if(i <= 5){
           totalActivityTime_perInterval <- totalActivityTime_perInterval + i
         }
       }
+      
+      for(j in diff_result) {
+      if(j < 5) {
+        continuousActivityTime_perInterval <-  continuousActivityTime_perInterval + j
+      }
+    }
     totalActivityTime_perInterval <- round(totalActivityTime_perInterval / 60, 0)
-    result_df <- rbind(result_df, data.frame(timeInterval=x, totalActivityTimeInHours=totalActivityTime_perInterval))
-  }#Each day loop
+    continuousActivityTime_perInterval <- round(continuousActivityTime_perInterval / 60, 0)
+    result_df <- rbind(result_df, data.frame(timeInterval=x, totalActivityTimeInHours=totalActivityTime_perInterval, continuousTimeInHours = continuousActivityTime_perInterval))
+  }#Each interval loop
 
   return(result_df)
 }
-View(data_activeTime_TimeRange)
 data_activityevent3 <- getActiveTime_df(data_activeTime_TimeRange)
-View(data_activityevent3)
+data_activityevent3$continuousrate <- (data_activityevent3$continuousTimeInHours/data_activityevent3$totalActivityTimeInHours)*100
 ```
 
 
 
 #Plotting the total and continuous working time by time range
 ```{r}
-ggplot(data_activityevent3, aes(x = timeInterval, y = totalActivityTimeInHours)) + geom_bar(stat = "identity")
+library(reshape)
+dfm <- melt(data_activityevent3[,c('timeInterval','totalActivityTimeInHours','continuousTimeInHours')],id.vars = 1)
+
+ggplot(dfm,aes(x = timeInterval,y = value)) + 
+    geom_bar(aes(fill = variable),stat = "identity",position = "dodge")
 ```
 
 
+#Plotting continuous work rate against time interval
 ```{r}
-data_testrunevent
+ggplot(data_activityevent3,aes(x = timeInterval,y = continuousrate)) + 
+    geom_line(aes(x = timeInterval, y= continuousrate),stat = "identity",group = 1) + scale_y_continuous(name="Continuous Rate (%)" , limits = c(40,70))
+
 ```
+#Conclusion: The graph shows expected results displaying maximum total activity hours and total continuous working hours on the interval 9 in the morning to 5 in the evening. The total and continuous working hours seem to be minimum at the interval of 3 to 5 in the morning.
+#The continous work rate follows a similar trend where the highest continous work rate is between the interval 9 in the morning to five in the evening. We accept the alternate hypothesis.
+
+
+
+
+### Research question 3:
+Does day of the week have an effect on development efficiency?
+
+#### Hypothesis
+Formulate an appropriate null hypothesis.
+Null Hypothesis (Ho): Day of the week does not affect development efficiency
+
+Alternate Hypothesis (Ha): Day of the week does affect development efficiency
+
+
 
 # Get day of week from the TriggeredAt column
 ```{r}
@@ -192,7 +227,6 @@ data_results <- left_join(data_Result_Success, data_Result_Failed)
 data_results <- data_results %>% mutate(total = Frequency_Success + Frequency_Failure)
 data_results <- data_results %>% mutate(success_rate = round((Frequency_Success/total)*100, 1))
 data_results <- data_results %>% mutate(failure_rate = round((Frequency_Failure/total)*100, 1))
-data_results
 ```
 
 #Plotting success rate and failure rate against day of the week
@@ -206,12 +240,22 @@ success_failure_plot <- ggplot(data_results) +
 
 success_failure_plot
 ```
+#Conclusion:
+#The graph shows maximum developer's efficeincy is on Saturday where his success rate is #close to 80% and failure rate is as low as 20%. Generally, in other days of the week #the success rate is significantly greater than the failure rate. The graph shows high #failure rate on Sundays and Mondays.So, we accept alternate hypothesis.
+
+
+### Research question 4:
+Does time of the day has an effect on development efficiency?
+
+#### Hypothesis
+Formulate an appropriate null hypothesis.
+Null Hypothesis (Ho): Time of the day does not affect development efficiency
+
+Alternate Hypothesis (Ha): Time of the day does affect development efficiency
 
 
 
-```{r}
-data_testrunevent
-```
+
 
 # Get day of week from the TriggeredAt column
 ```{r}
@@ -233,17 +277,16 @@ data_Result_Success_timeRange <- data_buildevent %>% select(timeInterval, Succes
 data_Result_Success_timeRange <- data_Result_Success_timeRange %>% group_by(data_Result_Success_timeRange$timeInterval) %>% count(Successful)
 colnames(data_Result_Success_timeRange) <- c("timeInterval", "Result_success" ,"Frequency_Success")
 
-View(data_Result_Success_timeRange)
 
 data_Result_Failed_timeRange <- data_buildevent %>% select(timeInterval, Successful) %>% filter(Successful == "FALSE") %>% sample_n(1786)
 data_Result_Failed_timeRange <- data_Result_Failed_timeRange %>% group_by(data_Result_Failed_timeRange$timeInterval) %>% count(Successful)
 colnames(data_Result_Failed_timeRange) <- c("timeInterval", "Result_Failure" ,"Frequency_Failure")
 
+
 data_results_timeRange <- left_join(data_Result_Success_timeRange, data_Result_Failed_timeRange)
 data_results_timeRange <- data_results_timeRange %>% mutate(total = Frequency_Success + Frequency_Failure)
 data_results_timeRange <- data_results_timeRange %>% mutate(success_rate = round((Frequency_Success/total)*100, 1))
 data_results_timeRange <- data_results_timeRange %>% mutate(failure_rate = round((Frequency_Failure/total)*100, 1))
-data_results_timeRange
 
 ```
 
@@ -255,8 +298,12 @@ success_failure_plot_timeRange <- ggplot(data_results_timeRange) +
   geom_line(aes(timeIntervalOrdered, success_rate, group=1), color="darkgreen") + 
   geom_line(aes(timeIntervalOrdered, failure_rate, group=1), color="darkred") + 
   scale_x_discrete(name="timeInterval") + 
-  scale_y_continuous(name="Success Rate (%)",sec.axis = sec_axis(~./100, name="Failure Rate (%)", labels = function(b){
+  scale_y_continuous(name="Success Rate (%)"  ,sec.axis = sec_axis(~./100,  name="Failure Rate (%)", labels = function(b){
   paste0(round(b * 100, 0), "")}))
 
 success_failure_plot_timeRange
 ```
+
+#Conclusion:
+#The graph shows that the efficiency differs by time of the day. THe success rate is highest around 6 to 8 in the morning and the failure rate seems to be high during the afternoon. The success rate at any time of the day seems to be significantly higher than the failure rate. So, the graph supports alternate hypothesis for the research question.
+
