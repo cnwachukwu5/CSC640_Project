@@ -7,6 +7,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(lubridate)
+library(corrplot)
 ```
 
 # Introduction
@@ -83,13 +84,16 @@ data_activeTime3 <- getActiveTime_df(data_activeTime)
 ```
 
 ```{r}
-data_activityevent2 <- data_activityevent2 %>% mutate_if(is.factor, as.character) %>% mutate_if(is.double, as.integer) 
-data_activityevent2
+data_activityevent 
+```
+```{r}
+
 ```
 
+
 ```{r}
-data_activeTime_lm <- lm(TotalActivityTimeInHours ~ day, data = data_activityevent2)
-summary(data_activeTime_lm)
+data_activeTime_lm = lm(Duration.millisecs. ~ day, data=data_activityevent)
+  summary(data_activeTime_lm)
 ```
 
 
