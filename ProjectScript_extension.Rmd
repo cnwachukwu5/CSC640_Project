@@ -7,7 +7,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(lubridate)
-library(corrplot)
+library(data.table)
 ```
 
 # Introduction
@@ -43,48 +43,46 @@ data_buildevent$day <- lubridate::wday(data_buildevent$TriggeredAt, label=TRUE)
 
 ```{r}
 data_activeTime <- data_activityevent %>% select(TriggeredAt, TriggeredAt_date_hms, day)  %>% sample_n(311245) %>% arrange(day, TriggeredAt)
-
-# Compute activity time and continuous working time
-getActiveTime_df <- function(sampledData){
-  result_df <- data.frame(dayofweek=character, continuousWorkingTimeInHours=numeric(),  totalActivityTimeInHours=numeric())
-  dayOfWeek <- list("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-
-  for (x in dayOfWeek){
-    data_for_dayEvent <- sampledData %>% select(day, TriggeredAt_date_hms,TriggeredAt) %>% filter(day == x) %>% arrange(TriggeredAt)
-    data_for_dayEvent %>% mutate_if(is.factor, as.character) -> data_for_dayEvent
-    list_time <- list(data_for_dayEvent$TriggeredAt_date_hms)
-    for(timeValue in list_time){
-      data_for_dayEvent$dateTime <- lubridate::ymd_hms(timeValue)
-    }
-    diff_result1  <- diff(data_for_dayEvent$dateTime)
-    totalActivityTime_perDay <-0 
-    continuousActivityTime_perDay <- 0
-    for(i in diff_result1) {
-      if(i <= 5) {
-        totalActivityTime_perDay <-  totalActivityTime_perDay + i
-      }
-    }
-    for(j in diff_result1) {
-      if(j < 5) {
-        continuousActivityTime_perDay <-  continuousActivityTime_perDay + j
-      }
-    }
-    continuousActivityTime_perDay <- round(continuousActivityTime_perDay / 60, 0)
-    totalActivityTime_perDay <- round(totalActivityTime_perDay / 60, 0)
-    result_df <- rbind(result_df, data.frame(day=x, continuousWorkingTimeInHours = continuousActivityTime_perDay, TotalActivityTimeInHours = totalActivityTime_perDay))
-  }#Each day loop
-
-  return(result_df)
-}
-
-data_activityevent2$continuousrate <- (data_activityevent2$continuousWorkingTimeInHours/data_activityevent2$TotalActivityTimeInHours) *100
-data_activityevent2$continuousrate <- round((data_activityevent2$continuousrate),0)
-
-data_activeTime3 <- getActiveTime_df(data_activeTime)
+data_activeTime$dateTime <-  lubridate::ymd_hms(data_activeTime$TriggeredAt_date_hms)
+data_activeTime$dateTime
 ```
 
 ```{r}
-data_activityevent 
+# This method is slightly slow
+getActiveTime_df <- function(sampledata){
+  N <- length(sampledata)
+  day_activeTime_dt <- data.frame(dayofweek=rep("", N), activeTime=rep("", N), stringsAsFactors = FALSE)
+  dayOfWeek <- list("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+  y <- 0
+  for (x in dayOfWeek){
+    data_for_dayEvent <- sampledata %>% select(day, dateTime,TriggeredAt) %>% filter(day == x) %>% arrange(TriggeredAt)
+    data_for_dayEvent %>% mutate_if(is.factor, as.character) -> data_for_dayEvent
+    
+    diff_result1  <- diff(data_for_dayEvent$dateTime)
+    
+    for(i in diff_result1) {
+      y <- y + 1
+      if(i <= 5) {
+        day_activeTime_dt[y, ] <- list(x, i)
+      }
+    }
+  }#Each day loop
+  return(day_activeTime_dt)
+}
+
+day_activityTime_df <- getActiveTime_df(data_activeTime)
+day_activityTime_df
+
+```
+
+
+
+```{r}
+
+```
+
+```{r}
+data_activityevent2 
 ```
 ```{r}
 
