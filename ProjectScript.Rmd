@@ -182,6 +182,8 @@ data_activityevent3$continuousrate <- (data_activityevent3$continuousTimeInHours
 library(reshape)
 dfm <- melt(data_activityevent3[,c('timeInterval','totalActivityTimeInHours','continuousTimeInHours')],id.vars = 1)
 
+View(dfm)
+
 ggplot(dfm,aes(x = timeInterval,y = value)) + 
     geom_bar(aes(fill = variable),stat = "identity",position = "dodge")
 ```
@@ -224,6 +226,7 @@ data_Result_Failed <- data_Result_Failed %>% group_by(data_Result_Failed$day) %>
 colnames(data_Result_Failed) <- c("day", "Result_Failure" ,"Frequency_Failure")
 
 data_results <- left_join(data_Result_Success, data_Result_Failed)
+View(data_results)
 data_results <- data_results %>% mutate(total = Frequency_Success + Frequency_Failure)
 data_results <- data_results %>% mutate(success_rate = round((Frequency_Success/total)*100, 1))
 data_results <- data_results %>% mutate(failure_rate = round((Frequency_Failure/total)*100, 1))
@@ -302,6 +305,62 @@ success_failure_plot_timeRange <- ggplot(data_results_timeRange) +
   paste0(round(b * 100, 0), "")}))
 
 success_failure_plot_timeRange
+```
+
+
+```{r}
+
+data_buildevent$day <- lubridate::wday(data_buildevent$TriggeredAt, label=TRUE)
+
+
+data_buildevent$factorsbyActiveWindow <- 
+  ifelse(grepl("Unit Test", data_buildevent$Active.Window), 'Unit Test',
+    ifelse(grepl("Explorer", data_buildevent$Active.Window), 'Windows Explorer',
+      ifelse(grepl(".cshtml", data_buildevent$Active.Window) | grepl(".xml", data_buildevent$Active.Window), 'UI files',
+        ifelse(grepl(".cpp", data_buildevent$Active.Window) | grepl(".cs", data_buildevent$Active.Window), 'Source Code Files',
+           ifelse(grepl("buildvision", data_buildevent$Active.Window) , 'Build files',
+                  ifelse(grepl("Output", data_buildevent$Active.Window) , 'Output Files', 'Miscellaneous'))))))
+         
+```
+
+```{r}
+View(data_buildevent)
+```
+
+```{r}
+data_ByActiveWindow <- data_buildevent %>% group_by(data_buildevent$day, data_buildevent$factorsbyActiveWindow) %>% count
+
+colnames(data_ByActiveWindow) <- c("day", "active_Window_factors" ,"count")
+
+data2 <- aggregate(count~day,  data_ByActiveWindow, sum)
+dayOfWeek <- list("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
+
+data_ByActiveWindow2 <-merge(x=data_ByActiveWindow,y=data2,by="day")
+data_ByActiveWindow2$percentage <- round((data_ByActiveWindow2$count.x/data_ByActiveWindow2$count.y)*100, 1)
+
+colnames(data_ByActiveWindow2) <- c("day", "active_Window_factors" ,"CountByFactors", "TotalCountInDay", "Percentage")
+
+View(data_ByActiveWindow2)
+```
+
+
+```{r}
+library(reshape2)
+data_ByActiveWindow2
+dfm1<- (cast(data_ByActiveWindow2, day~active_Window_factors))
+
+#dfm2 <- melt(data_ByActiveWindow2[,c('day','Miscellaneous', 'Output Files', 'Source Code Files', 'UI files', 'Unit Test', 'Windows Explorer' )],id.vars = 1)
+
+
+ggplot(data_ByActiveWindow2,aes(x = day, y=Percentage,  fill = active_Window_factors)) + 
+    geom_bar(stat = "identity",position = "dodge") 
+
+
+#
+#colnames(dfm1)
+#ggplot(dfm1) + geom_bar(aes(x=day, y=Miscellaneous, Output Files) , stat='identity')
+
 ```
 
 #Conclusion:
