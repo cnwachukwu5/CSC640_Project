@@ -461,3 +461,45 @@ failure_plot_timeRange <- ggplot(data_results_timeRange) +
 failure_plot_timeRange
 ```
 The graphs show that the efficiency/productivity differs by time of the day. The success rate is highest around 6-8 in the morning and the failure rate seems to be high during the afternoon (12-14). The success rate at any time of the day seems to be significantly higher than the failure rate. So, the graphs support alternate hypothesis for the research question.
+
+
+```{r}
+
+data_buildevent$day <- lubridate::wday(data_buildevent$TriggeredAt, label=TRUE)
+
+
+data_buildevent$factorsbyActiveWindow <- 
+  ifelse(grepl("Unit Test", data_buildevent$Active.Window), 'Unit Test',
+    ifelse(grepl("Explorer", data_buildevent$Active.Window), 'Windows Explorer',
+      ifelse(grepl(".cshtml", data_buildevent$Active.Window) | grepl(".xml", data_buildevent$Active.Window), 'UI files',
+        ifelse(grepl(".cpp", data_buildevent$Active.Window) | grepl(".cs", data_buildevent$Active.Window), 'Source Code Files',
+           ifelse(grepl("buildvision", data_buildevent$Active.Window) , 'Build files',
+                  ifelse(grepl("Output", data_buildevent$Active.Window) , 'Output Files', 'Miscellaneous'))))))
+         
+```
+
+
+
+```{r}
+data_ByActiveWindow <- data_buildevent %>% group_by(data_buildevent$day, data_buildevent$factorsbyActiveWindow) %>% count
+
+colnames(data_ByActiveWindow) <- c("day", "active_Window_factors" ,"count")
+
+data2 <- aggregate(count~day,  data_ByActiveWindow, sum)
+dayOfWeek <- list("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
+
+data_ByActiveWindow2 <-merge(x=data_ByActiveWindow,y=data2,by="day")
+data_ByActiveWindow2$percentage <- round((data_ByActiveWindow2$count.x/data_ByActiveWindow2$count.y)*100, 1)
+
+colnames(data_ByActiveWindow2) <- c("day", "active_Window_factors" ,"CountByFactors", "TotalCountInDay", "Percentage")
+```
+
+
+```{r}
+library(reshape2)
+
+ggplot(data_ByActiveWindow2,aes(x = day, y=Percentage,  fill = active_Window_factors)) + 
+    geom_bar(stat = "identity",position = "dodge") 
+```
+
